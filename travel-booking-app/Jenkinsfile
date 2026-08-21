@@ -55,6 +55,7 @@ pipeline {
                     '''
                 }
             }
+        }
             stage('Deploy to Kubernetes') {
     steps {
         dir('travel-booking-app') {
