@@ -1,15 +1,16 @@
 pipeline {
-    agent {
-        label 'built-in'
-    }
 
-    environment {
-        IMAGE_NAME = "mohammadashraf009/travel-booking-app"
-        IMAGE_TAG = "${BUILD_NUMBER}"
-        KUBECONFIG = "/var/lib/jenkins/.kube/config"
-    }
+    agent any
+
+
+   environment {
+    IMAGE_NAME = "mohammadashraf009/travel-booking-app"
+    IMAGE_TAG = "${BUILD_NUMBER}"
+    
+}
 
     stages {
+
         stage('Checkout') {
             steps {
                 git branch: 'main',
@@ -19,61 +20,61 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                dir('travel-booking-app') {
+            sh 'mvn clean package -DskipTests'
+        }
             }
         }
 
         stage('Unit Test') {
             steps {
-                sh 'mvn test'
+               dir('travel-booking-app') {
+            sh 'mvn clean package -DskipTests'
+        }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+                dir('travel-booking-app') {
+            sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+        }
             }
         }
 
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS')]) {
+
                     sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push "$IMAGE_NAME:$IMAGE_TAG"
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+
+                    docker push $IMAGE_NAME:$IMAGE_TAG
                     '''
                 }
             }
         }
-
-        stage('Check Kubernetes Connection') {
-            steps {
-                sh '''
-                    kubectl cluster-info
-                    kubectl get nodes
-                '''
-            }
-        }
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh '''
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl apply -f k8s/service.yaml
-                    kubectl rollout status -f k8s/deployment.yaml --timeout=180s
-                '''
-            }
+            stage('Deploy to Kubernetes') {
+    steps {
+        dir('travel-booking-app') {
+            sh '''
+            kubectl apply -f k8s/deployment.yaml
+            kubectl apply -f k8s/service.yaml
+            
         }
     }
+}
+    }
+        
 
     post {
         success {
             echo 'Pipeline executed successfully.'
         }
+
         failure {
             echo 'Pipeline failed.'
         }
