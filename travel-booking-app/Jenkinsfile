@@ -60,6 +60,10 @@ pipeline {
                 stage('Deploy to Kubernetes') {
         steps {
             sh '''
+               stage('Deploy to Kubernetes') {
+    steps {
+        dir('travel-booking-app') {
+            sh '''
                 kubectl apply -f k8s/deployment.yaml
                 kubectl apply -f k8s/service.yaml
 
